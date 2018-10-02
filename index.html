@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html ng-app="trello-habitica" lang="en">
+<head>
+    <meta charset="utf-8">
+    <title ng-bind="pageTitle"> 
+        Trello-Habitica Integration 
+    </title>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"
+            integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+            crossorigin="anonymous"></script>
+    <script src="https://api.trello.com/1/client.js?key=db4d00b345825701459f10a434629501"></script>
+</head>
+<body ng-class="">
+    <header>
+        <h4>Trello-Habitica Integration</h4>
+        <br/>
+    </header>
+
+    <div ng-controller="IntegrationController as ctrl">
+        <label> Habitica ID:
+            <input ng-model="ctrl.data.habitica.id" type="text"/>
+        </label>
+        <label> Habitica API token:
+            <input ng-model="ctrl.data.habitica.token" type="text"/>
+        </label>
+
+        <h4>Create integration:</h4>
+        <form>
+            
+            <label> Trello token:
+                <input id="trello-token" type="text"/>
+                <input id="trello-login-btn" type="button" value="Login with Trello" />
+            </label>
+
+            <input type="submit" class="btn btn-primary" value="create" />
+        </form>
+    </div>
+
+    <footer>
+    </footer>
+
+    <script>
+        authSuccess = function() {
+            $('#trello-token').val(window.Trello.token());
+        };
+
+        authFail = function() {
+            $('#trello-token').val("");
+        };
+
+        $('#trello-login-btn').click(function() {
+            window.Trello.authorize({
+              type: 'popup',
+              name: 'Habitica-Trello Integration',
+              persist: false,
+              scope: {
+                read: true,
+                write: true,
+                account: false
+              },
+              expiration: 'never',
+              success: authSuccess,
+              error: authFail
+            });
+        });
+    </script>
+</body>
