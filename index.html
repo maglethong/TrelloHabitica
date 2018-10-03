@@ -36,10 +36,14 @@
 
     <label> Trello username: </label>
     <input id="trello-username" type="text" disabled>
+    
+    Trello Boards:
     <div id="trello-boards">
-      Trello Boards:
     </div>
-
+    
+    Trello Lists:
+    <div id="trello-lists">
+    </div>
 
     <br/>
 
@@ -52,42 +56,88 @@
 
 <script>
   config = {
+    habitica: {
+      id: '',
+      token: ''
+    },
     trello: {
       token: '',
       member: {
         id: '',
         fullName: '',
         username: '',
-        boards: {
+        boards: [{
           name: '',
           closed: false,
-          id: ''
-        }
+          id: '',
+          lists: [{
+            id: '',
+            name: ''
+          }]
+        }]
+      },
+      using: {
+        board: null,
+        entryLists: [],
+        exitLists: []
       }
     }
   };
 
-  updateBoards = function () {
+  updateTrelloBoards = function () {
     var boards = config.trello.member.boards;
-    var structure = ['Trello Boards:'];
 
-    // TODO => Use this: https://stackoverflow.com/questions/8936652/dynamically-create-buttons-with-jquery
+    $('#trello-boards').html('');
+
     if (boards && boards.length) {
-      structure.push(config.trello.member.boards
-        .map(function (b, i) {
-          return [
-            '<div id="trello-board-' + i + '">',
-            '  - ' + b.name,
-            '  <input id="trello-board-use-btn" type="button" value="Use"/>',
-            '</div>'
-          ].join('');
-        })
-        .join(''));
-    }
+      boards.forEach( function (b, i) {
+        $("#trello-boards").append($('<input/>', {
+          type: 'button',  
+          id:'trello-board-' + i, 
+          value: b.name,
+          click: function () {
+            config.trello.using.board = config.trello.member.boards[i].id;
 
-    $('#trello-boards').html(structure.join(''));
+            // TODO -> Get lists of board
+            var lists = config.trello.member.boards[i].lists;
+            if (!lists || !lists.length) {
+              window.Trello.boards.get(config.trello.using.board, {
+                fields: 'lists',
+                lists: 'open'
+              }, function (res) {
+                config.trello.member.boards[i].lists = res.lists;
+                updateTrelloList();
+              });
+            } else {
+              updateTrelloList();
+            }
+          }
+        }));
+      });
+    } else {
+      config.trello.using.board = '';
+      updateTrelloList();
+    }
   };
 
+  updateTrelloList = function () {
+    var board = config.trello.member.boards.find(function (b) {
+      return b.id === config.trello.using.board;
+    });
+
+    $('#trello-lists').html('');
+
+    if (board && board.lists && board.lists.length) {
+      board.lists.forEach( function (l, i) {
+        $("#trello-lists").append($('<input/>', {
+          type: 'button',
+          id: 'trello-list-' + i,
+          value: l.name
+        }));
+      });
+    }
+  };
+  
   authSuccess = function () {
     config.trello.token = window.Trello.token();
     $('#trello-token').val(config.trello.token);
@@ -98,7 +148,7 @@
     }, function (res) {
       config.trello.member = res;
       $('#trello-username').val(config.trello.member.username);
-      updateBoards();
+      updateTrelloBoards();
     });
   };
 
@@ -107,7 +157,7 @@
     config.trello.member = {};
     $('#trello-token').val(config.trello.token);
     $('#trello-username').val('');
-    updateBoards();
+    updateTrelloBoards();
   };
 
   $('#trello-login-btn').click(function () {
