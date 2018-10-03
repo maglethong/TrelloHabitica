@@ -1,67 +1,129 @@
 <!DOCTYPE html>
 <html ng-app="trello-habitica" lang="en">
 <head>
-    <meta charset="utf-8">
-    <title ng-bind="pageTitle"> 
-        Trello-Habitica Integration 
-    </title>
-    <script src="https://code.jquery.com/jquery-3.3.1.min.js"
-            integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
-            crossorigin="anonymous"></script>
-    <script src="https://api.trello.com/1/client.js?key=db4d00b345825701459f10a434629501"></script>
+  <meta charset="utf-8">
+  <title ng-bind="pageTitle">
+    Trello-Habitica Integration
+  </title>
+  <script src="https://code.jquery.com/jquery-3.3.1.min.js"
+          integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+          crossorigin="anonymous"></script>
+  <script src="https://api.trello.com/1/client.js?key=db4d00b345825701459f10a434629501"></script>
 </head>
 <body ng-class="">
-    <header>
-        <h4>Trello-Habitica Integration</h4>
-        <br/>
-    </header>
+<header>
+  <h4>Trello-Habitica Integration</h4>
+  <br/>
+</header>
 
-    <div ng-controller="IntegrationController as ctrl">
-        <label> Habitica ID:
-            <input ng-model="ctrl.data.habitica.id" type="text"/>
-        </label>
-        <label> Habitica API token:
-            <input ng-model="ctrl.data.habitica.token" type="text"/>
-        </label>
+<div ng-controller="IntegrationController as ctrl">
+  <label> Habitica ID:
+    <input ng-model="ctrl.data.habitica.id" type="text"/>
+  </label>
+  <label> Habitica API token:
+    <input ng-model="ctrl.data.habitica.token" type="text"/>
+  </label>
 
-        <h4>Create integration:</h4>
-        <form>
-            
-            <label> Trello token:
-                <input id="trello-token" type="text"/>
-                <input id="trello-login-btn" type="button" value="Login with Trello" />
-            </label>
+  <h4>Create integration:</h4>
+  <form>
 
-            <input type="submit" class="btn btn-primary" value="create" />
-        </form>
+    <label> Trello token:
+      <input id="trello-token" type="text"/>
+      <input id="trello-login-btn" type="button" value="Login with Trello"/>
+    </label>
+
+    <br/>
+
+    <label> Trello username: </label>
+    <input id="trello-username" type="text" disabled>
+    <div id="trello-boards">
+      Trello Boards:
     </div>
 
-    <footer>
-    </footer>
 
-    <script>
-        authSuccess = function() {
-            $('#trello-token').val(window.Trello.token());
-        };
+    <br/>
 
-        authFail = function() {
-            $('#trello-token').val("");
-        };
+    <input type="submit" class="btn btn-primary" value="create"/>
+  </form>
+</div>
 
-        $('#trello-login-btn').click(function() {
-            window.Trello.authorize({
-              type: 'popup',
-              name: 'Habitica-Trello Integration',
-              persist: false,
-              scope: {
-                read: true,
-                write: true,
-                account: false
-              },
-              expiration: 'never',
-              success: authSuccess,
-              error: authFail
-            });
-        });
-    </script>
+<footer>
+</footer>
+
+<script>
+  config = {
+    trello: {
+      token: '',
+      member: {
+        id: '',
+        fullName: '',
+        username: '',
+        boards: {
+          name: '',
+          closed: false,
+          id: ''
+        }
+      }
+    }
+  };
+
+  updateBoards = function () {
+    var boards = config.trello.member.boards;
+    var structure = ['Trello Boards:'];
+
+    // TODO => Use this: https://stackoverflow.com/questions/8936652/dynamically-create-buttons-with-jquery
+    if (boards && boards.length) {
+      structure.push(config.trello.member.boards
+        .map(function (b, i) {
+          return [
+            '<div id="trello-board-' + i + '">',
+            '  - ' + b.name,
+            '  <input id="trello-board-use-btn" type="button" value="Use"/>',
+            '</div>'
+          ].join('');
+        })
+        .join(''));
+    }
+
+    $('#trello-boards').html(structure.join(''));
+  };
+
+  authSuccess = function () {
+    config.trello.token = window.Trello.token();
+    $('#trello-token').val(config.trello.token);
+
+    window.Trello.members.get('me', {
+      fields: 'id,fullName,username',
+      boards: 'all'
+    }, function (res) {
+      config.trello.member = res;
+      $('#trello-username').val(config.trello.member.username);
+      updateBoards();
+    });
+  };
+
+  authFail = function () {
+    config.trello.token = '';
+    config.trello.member = {};
+    $('#trello-token').val(config.trello.token);
+    $('#trello-username').val('');
+    updateBoards();
+  };
+
+  $('#trello-login-btn').click(function () {
+    window.Trello.authorize({
+      type: 'popup',
+      name: 'Habitica-Trello Integration',
+      persist: false,
+      scope: {
+        read: true,
+        write: true,
+        account: false
+      },
+      expiration: 'never',
+      success: authSuccess,
+      error: authFail
+    });
+  });
+</script>
 </body>
