@@ -10,23 +10,26 @@
           crossorigin="anonymous"></script>
   <script src="https://api.trello.com/1/client.js?key=db4d00b345825701459f10a434629501"></script>
 </head>
-<body ng-class="">
+<body>
+
 <header>
   <h4>Trello-Habitica Integration</h4>
   <br/>
 </header>
 
-<div ng-controller="IntegrationController as ctrl">
-  <label> Habitica ID:
-    <input ng-model="ctrl.data.habitica.id" type="text"/>
-  </label>
-  <label> Habitica API token:
-    <input ng-model="ctrl.data.habitica.token" type="text"/>
-  </label>
+<div>
+  <div class="habitica">
+    <label> Habitica ID:
+      <input id="habitica-id" type="text"/>
+    </label>
+    <label> Habitica API token:
+      <input id="habitica-token" type="text"/>
+    </label>
+  </div>
 
   <h4>Create integration:</h4>
-  <form>
 
+  <div class="trello">
     <label> Trello token:
       <input id="trello-token" type="text"/>
       <input id="trello-login-btn" type="button" value="Login with Trello"/>
@@ -38,21 +41,27 @@
     <input id="trello-username" type="text" disabled>
     
     Trello Boards:
-    <div id="trello-boards">
+    <div id="trello-boards" class="trello-board-collection">
     </div>
     
     Trello Lists:
-    <div id="trello-lists">
+    <div id="trello-lists" class="trello-list-collection">
     </div>
+  </div>
+  <br/>
 
-    <br/>
-
-    <input type="submit" class="btn btn-primary" value="create"/>
-  </form>
+  <input id="create-btn" type="button" value="create integration"/>
+  <input id="remove-btn" type="button" value="remove integration"/>
 </div>
 
 <footer>
 </footer>
+
+<style>
+  .selected {
+    background-color: blue;
+  }
+</style>
 
 <script>
   config = {
@@ -93,12 +102,13 @@
       boards.forEach( function (b, i) {
         $("#trello-boards").append($('<input/>', {
           type: 'button',  
-          id:'trello-board-' + i, 
+          id:'trello-board-' + i,
+          class: 'trello-board',
           value: b.name,
           click: function () {
             config.trello.using.board = config.trello.member.boards[i].id;
 
-            // TODO -> Get lists of board
+            // Fetch lists of board
             var lists = config.trello.member.boards[i].lists;
             if (!lists || !lists.length) {
               window.Trello.boards.get(config.trello.using.board, {
@@ -111,6 +121,12 @@
             } else {
               updateTrelloList();
             }
+            
+            // Set as selected
+            for (var j = 0; j< boards.length; j++ ) {
+              $('#trello-board-' + j).removeClass('selected');
+            }
+            $('#trello-board-' + i).addClass('selected');
           }
         }));
       });
@@ -129,11 +145,42 @@
 
     if (board && board.lists && board.lists.length) {
       board.lists.forEach( function (l, i) {
-        $("#trello-lists").append($('<input/>', {
-          type: 'button',
+        $("#trello-lists").append($('<div>', {
           id: 'trello-list-' + i,
-          value: l.name
-        }));
+          class: 'trello-list',
+          text: l.name
+        }).append($('<input/>', {
+          id: 'trello-list-' + i + '-btn-in',
+          class: 'trello-list-btn trello-list-btn-in',
+          type: 'button',
+          value: 'in',
+          click: function() {
+            var lists = config.trello.using.entryLists;
+            var index = lists.indexOf(l.id);
+            if (index > -1) {
+              lists.splice(index, 1);
+              $('#trello-list-' + i + '-btn-in').removeClass('selected');
+            } else {
+              lists.push(l.id);
+              $('#trello-list-' + i + '-btn-in').addClass('selected');
+            }
+          }
+        })).append($('<input/>', {
+          id: 'trello-list-' + i + '-btn-out',
+          class: 'trello-list-btn trello-list-btn-out',
+          type: 'button',
+          value: 'out',
+          click: function() {
+            var lists = config.trello.using.exitLists;
+            var index = lists.indexOf(l.id);
+            if (index > -1) {
+              lists.splice(index, 1);
+              $('#trello-list-' + i + '-btn-out').removeClass('selected');
+            } else {
+              lists.push(l.id);
+              $('#trello-list-' + i + '-btn-out').addClass('selected');
+            }}
+        })));
       });
     }
   };
@@ -174,6 +221,22 @@
       success: authSuccess,
       error: authFail
     });
+  });
+
+  $('#create-btn').click(function () {
+    config.habitica.id = $('#habitica-id').val();
+    config.habitica.token = $('#habitica-token').val();
+    
+    // TODO -> send request
+    alert('WIP');
+  });
+  
+  $('#remove-btn').click(function () {
+    config.habitica.id = $('#habitica-id').val();
+    config.habitica.token = $('#habitica-token').val();
+
+    // TODO -> send request
+    alert('WIP');
   });
 </script>
 </body>
