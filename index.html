@@ -78,7 +78,13 @@
 </head>
 <body class="bg-light">
 
-
+<header>
+  <div class="row" style="background-color: red; color: lime;">
+    <div class="col">
+      <h4 style="text-align: center"> This is a Work In Progress... The integration does not yet work and no data entered here is saved. </h4>
+    </div>
+  </div>
+</header>
 
 <div class="container py-3">
 
@@ -121,24 +127,35 @@
             </div>
             <div class="col" align="right">
               <input id="trello-login-btn" class="btn btn-success btn rounded-0" type="button" value="Login"/>
-              <label id="trello-username"> </label>
+              <img id="trello-username" srv=""> </img>
             </div>
           </div>
         </div>
         <div class="card-body">
-          <label>Choose a Board</label>
-          <div class="card-body" style="padding-top: 0">
-            <div id="trello-boards" class="row trello-board-collection">
+          <div class="row">
+            <div class="col-md-6">
+              <label>Choose a Board</label>
+              <select id="trello-boards" class="form-control selectpicker custom-select btn-md show-tick trello-board-collection rounded-0">
+              </select>
             </div>
           </div>
-          
-          
-          
-          <label>Choose Creation and Deletion Lists</label>
-          <div class="card-body" style="padding-top: 0">
-            <div id="trello-lists" class="trello-list-collection">
+          <br/>
+
+          <div class="row">
+            <div class="col-md-6" data-toggle="tooltip" title="Cards created or moved here will create cards in Habitica">
+              <label>Choose Create Lists</label>
+              <select id="trello-lists-in" class="form-control selectpicker custom-select btn-md show-tick trello-board-collection rounded-0" multiple>
+              </select>
+            </div>
+            <div class="col-md-6" data-toggle="tooltip" title="Cards moved here will complete cards in Habitica">
+              <label>Choose Done Lists</label>
+              <select id="trello-lists-out" class="form-control selectpicker custom-select btn-md show-tick trello-board-collection rounded-0" multiple>
+              </select>
             </div>
           </div>
+
+          
+          
         </div>
       </div>
       <br/>
@@ -171,6 +188,7 @@
         id: '',
         fullName: '',
         username: '',
+        email: '',
         boards: [{
           name: '',
           closed: false,
@@ -194,36 +212,22 @@
 
     $('#trello-boards').html('');
 
+    $('#trello-boards').append($('<option/>', {
+      class: "trello-board btn-md",
+      value: '',
+      disabled: true,
+      selected: true,
+      text: 'Select a Board'
+    }));
+
     if (boards && boards.length) {
       boards.forEach( function (b, i) {
-        $("#trello-boards").append($('<input/>', {
+        $("#trello-boards").append($('<option/>', {
           type: 'button',  
           id:'trello-board-' + i,
-          class: 'col-sm-4 btn rounded-0 trello-board',
-          value: b.name,
-          click: function () {
-            config.trello.using.board = config.trello.member.boards[i].id;
-
-            // Fetch lists of board
-            var lists = config.trello.member.boards[i].lists;
-            if (!lists || !lists.length) {
-              window.Trello.boards.get(config.trello.using.board, {
-                fields: 'lists',
-                lists: 'open'
-              }, function (res) {
-                config.trello.member.boards[i].lists = res.lists;
-                updateTrelloList();
-              });
-            } else {
-              updateTrelloList();
-            }
-            
-            // Set as selected
-            for (var j = 0; j< boards.length; j++ ) {
-              $('#trello-board-' + j).removeClass('selected');
-            }
-            $('#trello-board-' + i).addClass('selected');
-          }
+          class: 'trello-board btn-md',
+          text: b.name,
+          value: i
         }));
       });
     } else {
@@ -232,51 +236,59 @@
     }
   };
 
+  $('#trello-boards').on('change', function() {
+    var index = this.value;
+    var boards = config.trello.member.boards;
+    
+    config.trello.using.board = config.trello.member.boards[index].id;
+
+    // Fetch lists of board
+    var lists = config.trello.member.boards[index].lists;
+    if (!lists || !lists.length) {
+      window.Trello.boards.get(config.trello.using.board, {
+        fields: 'lists',
+        lists: 'open'
+      }, function (res) {
+        config.trello.member.boards[index].lists = res.lists;
+        updateTrelloList();
+      });
+    } else {
+      updateTrelloList();
+    }
+
+    // Set as selected
+    for (var j = 0; j< boards.length; j++ ) {
+      $('#trello-board-' + j).removeClass('selected');
+    }
+    $('#trello-board-' + index).addClass('selected');
+  });
+
+  
+  
   updateTrelloList = function () {
     var board = config.trello.member.boards.find(function (b) {
       return b.id === config.trello.using.board;
     });
 
-    $('#trello-lists').html('');
+    $('#trello-lists-in').html('');
+    $('#trello-lists-out').html('');
 
     if (board && board.lists && board.lists.length) {
       board.lists.forEach( function (l, i) {
-        $("#trello-lists").append($('<div>', {
-          id: 'trello-list-' + i,
-          class: 'trello-list',
-          text: l.name
-        }).append($('<input/>', {
+        $("#trello-lists-in").append($('<option>', {
           id: 'trello-list-' + i + '-btn-in',
-          class: 'trello-list-btn trello-list-btn-in',
           type: 'button',
-          value: 'in',
-          click: function() {
-            var lists = config.trello.using.entryLists;
-            var index = lists.indexOf(l.id);
-            if (index > -1) {
-              lists.splice(index, 1);
-              $('#trello-list-' + i + '-btn-in').removeClass('selected');
-            } else {
-              lists.push(l.id);
-              $('#trello-list-' + i + '-btn-in').addClass('selected');
-            }
-          }
-        })).append($('<input/>', {
+          class: 'trello-list btn-md',
+          text: l.name,
+          value: board.lists[i].id
+        }));
+        $("#trello-lists-out").append($('<option>', {
           id: 'trello-list-' + i + '-btn-out',
-          class: 'trello-list-btn trello-list-btn-out',
           type: 'button',
-          value: 'out',
-          click: function() {
-            var lists = config.trello.using.exitLists;
-            var index = lists.indexOf(l.id);
-            if (index > -1) {
-              lists.splice(index, 1);
-              $('#trello-list-' + i + '-btn-out').removeClass('selected');
-            } else {
-              lists.push(l.id);
-              $('#trello-list-' + i + '-btn-out').addClass('selected');
-            }}
-        })));
+          class: 'trello-list btn-md',
+          text: l.name,
+          value: board.lists[i].id
+        }));
       });
     }
   };
@@ -286,12 +298,18 @@
     $('#trello-token').val(config.trello.token);
 
     window.Trello.members.get('me', {
-      fields: 'id,fullName,username',
+      fields: 'id,fullName,username,email,avatarUrl',
       boards: 'all'
     }, function (res) {
       $('#trello-login-btn').css("visibility", "hidden");
       config.trello.member = res;
-      $('#trello-username').html(config.trello.member.username);
+      $('#trello-username').attr({
+        src: res.avatarUrl + '/50.png',
+        alt: res.username,
+        style: "border:2px solid #000000; width: 2.4em",
+        'data-toggle': 'tooltip',
+        title: res.fullName + ' (' + res.username+ ')'
+      });
       updateTrelloBoards();
     });
   };
@@ -324,8 +342,11 @@
     config.habitica.id = $('#habitica-id').val();
     config.habitica.token = $('#habitica-token').val();
     
+    config.trello.using.exitLists = $("select#trello-lists-out").val();
+    config.trello.using.entryLists = $("select#trello-lists-in").val();
+    
     // TODO -> send request
-    alert('WIP');
+    alert('WIP c');
   });
   
   $('#remove-btn').click(function () {
