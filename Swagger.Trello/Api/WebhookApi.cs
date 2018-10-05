@@ -18,7 +18,7 @@ namespace Swagger.Trello.Api
         /// <param name="key">&lt;a href&#x3D;\&quot;https://trello.com/1/appKey/generate\&quot;  target&#x3D;\&quot;_blank\&quot;&gt;Generate your application key&lt;/a&gt;</param>
         /// <param name="token">&lt;a href&#x3D;\&quot;https://trello.com/docs/gettingstarted/index.html#getting-a-token-from-a-user\&quot;  target&#x3D;\&quot;_blank\&quot;&gt;Getting a token from a user&lt;/a&gt;</param>
         /// <returns></returns>
-        void AddWebhooks (Webhooks body, string key, string token);
+        string AddWebhooks (Webhooks body, string key, string token);
         /// <summary>
         /// deleteWebhooksByIdWebhook() 
         /// </summary>
@@ -159,7 +159,7 @@ namespace Swagger.Trello.Api
         /// <param name="key">&lt;a href&#x3D;\&quot;https://trello.com/1/appKey/generate\&quot;  target&#x3D;\&quot;_blank\&quot;&gt;Generate your application key&lt;/a&gt;</param> 
         /// <param name="token">&lt;a href&#x3D;\&quot;https://trello.com/docs/gettingstarted/index.html#getting-a-token-from-a-user\&quot;  target&#x3D;\&quot;_blank\&quot;&gt;Getting a token from a user&lt;/a&gt;</param> 
         /// <returns></returns>            
-        public void AddWebhooks (Webhooks body, string key, string token)
+        public string AddWebhooks (Webhooks body, string key, string token)
         {
             
             // verify the required parameter 'body' is set
@@ -193,10 +193,8 @@ namespace Swagger.Trello.Api
     
             if (((int)response.StatusCode) >= 400)
                 throw new ApiException ((int)response.StatusCode, "Error calling AddWebhooks: " + response.Content, response.Content);
-            else if (((int)response.StatusCode) == 0)
-                throw new ApiException ((int)response.StatusCode, "Error calling AddWebhooks: " + response.ErrorMessage, response.ErrorMessage);
     
-            return;
+            return response.Content;
         }
     
         /// <summary>
